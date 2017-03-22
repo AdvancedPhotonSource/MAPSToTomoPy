@@ -25,6 +25,7 @@ from pyqtgraph import QtGui, QtCore
 import h5py
 import tomopy
 import time
+import MyImageItem
 #import subpixelshift
 #from subpixelshift import *
 
@@ -191,10 +192,10 @@ class Example(QtGui.QMainWindow):
             fileMenu.addAction(closeAction)
 
             self.optionMenu = menubar.addMenu('Convert Option')
-            self.optionMenu.addAction(convertAction)
-            
             self.optionMenu.addAction(selectFilesAction)
             self.optionMenu.addAction(selectImageTagAction)
+            self.optionMenu.addAction(selectElementAction)
+            self.optionMenu.addAction(convertAction)
             self.optionMenu.setDisabled(True)
 
             self.alignmentMenu = menubar.addMenu("Alignment")
@@ -322,7 +323,7 @@ class Example(QtGui.QMainWindow):
                   sinogram group                 
             '''
             self.sino = QSelect2()
-            self.sinoView = IView4()
+            self.sinoView = SinoWidget()
 
 
             sinoBox = QtGui.QHBoxLayout()
@@ -930,6 +931,7 @@ class Example(QtGui.QMainWindow):
       def hotspotProjChanged(self):
             1
       def hotSpotProjChanged(self):
+            self.file_name_update(self.projView)
             self.projView.view.hotSpotNumb=self.projView.sld.value()
             self.projView.view.projView.setImage(self.data[self.projViewElement,self.projView.view.hotSpotNumb,:,:])
 
@@ -1363,6 +1365,13 @@ class Example(QtGui.QMainWindow):
             element=self.imgProcessControl.combo1.currentIndex()
             self.imgProcessImg=self.data[element, self.imgProcess.sld.value(), : ,:]
             self.imgProcess.view.projView.setImage(self.imgProcessImg)
+            self.file_name_update(self.imgProcess)
+
+      def file_name_update(self, view):
+            try:
+                view.file_name_title.setText(self.selectedFiles[view.sld.value()])
+            except:
+                print 'bad index'
             
       def imgProcessProjShow(self):
             element=self.imgProcessControl.combo1.currentIndex()
@@ -1556,13 +1565,12 @@ class Example(QtGui.QMainWindow):
             self.recon: ndarray
                   3D volume reconstruction
             '''
+            self.file_name_update(self.reconView)
             self.reconProjNumb=self.reconView.sld.value()
             self.recon.maxText.setText(str(self.rec[self.reconProjNumb,:,:].max()))
             self.recon.minText.setText(str(self.rec[self.reconProjNumb,:,:].min()))
             
             self.reconView.view.projView.setImage(self.rec[self.reconProjNumb,:,:])
-
-
 
 
       
@@ -1791,6 +1799,13 @@ class Example(QtGui.QMainWindow):
             self.x.textedit.setText("All the files has been converted")
             self.x.btn.setText("OK")
             self.x.btn.clicked.connect(self.selectFilesHide)
+            self.imgProcess.file_name_title.setText(self.selectedFiles[self.imgProcess.sld.value()])
+            self.projView.file_name_title.setText(self.selectedFiles[self.imgProcess.sld.value()])
+            self.reconView.file_name_title.setText(self.selectedFiles[self.imgProcess.sld.value()])
+            self.imgProcessControl.combo1.setCurrentIndex(1)
+            self.imgProcessControl.combo1.setCurrentIndex(0)
+            self.projViewControl.combo.setCurrentIndex(1)
+            self.projViewControl.combo.setCurrentIndex(0)
             self.x.show()
       def selectElement(self):
             '''
@@ -2081,7 +2096,6 @@ class Example(QtGui.QMainWindow):
                         
             self.projections=len(self.selectedFiles)
             self.theta= zeros(self.projections)
-            
 
             self.xshift=zeros(self.projections,int)
             self.yshift=zeros(self.projections,int)
@@ -2298,7 +2312,7 @@ class Example(QtGui.QMainWindow):
             self.data: ndarray
                   4d tomographic data [element, projections, y,x]
             '''
-            
+            self.file_name_update(self.sino)
             self.thickness=10
             self.sinoelement=self.sino.combo.currentIndex()
             sinodata=self.data[self.sinoelement,:,:,:]
@@ -2786,7 +2800,7 @@ class IView(pg.GraphicsLayoutWidget):
             self.show()
             self.p1=self.addPlot()
             
-            self.projView = pg.ImageItem()
+            self.projView = MyImageItem.ImageItem()
             self.projView.rotate(-90)
             self.p1.addItem(self.projView)
 
@@ -2856,7 +2870,7 @@ class IView2(pg.GraphicsLayoutWidget):
 
             self.p1=self.addPlot()
             
-            self.projView=pg.ImageItem()
+            self.projView=MyImageItem.ImageItem()
             self.projView.rotate(-90)
             self.projView.iniX=0
             self.projView.iniY=0
@@ -2912,9 +2926,9 @@ class IView2(pg.GraphicsLayoutWidget):
 ##      def getShape(self):
 ##            self.regShift=zeros(self.getProcessedImage().shape[0],dtype=int)
 
-class IView4(pg.QtGui.QWidget):
+class SinoWidget(pg.QtGui.QWidget):
       def __init__(self):
-            super(IView4, self).__init__()
+            super(SinoWidget, self).__init__()
         
             self.initUI()
 
@@ -2943,6 +2957,7 @@ class IView3(QtGui.QWidget):
             self.show()
 
             hb3=QtGui.QHBoxLayout()
+            self.file_name_title = QtGui.QLabel("_")
             lbl1=QtGui.QLabel("x pos")
             self.lbl2=QtGui.QLabel("")
             lbl3=QtGui.QLabel("y pos")
@@ -2967,6 +2982,7 @@ class IView3(QtGui.QWidget):
 
             hb2.addWidget(self.lcd)
             hb2.addWidget(self.sld)
+            vb1.addWidget(self.file_name_title)
             vb1.addLayout(hb3)
             vb1.addWidget(self.view)
             vb1.addLayout(hb2)
