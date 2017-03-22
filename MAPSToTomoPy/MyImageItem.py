@@ -5,13 +5,13 @@ class ImageItem (pyqtgraph.ImageItem):
         pyqtgraph.ImageItem.__init__(self)
 
     def mousePressEvent(self, ev):
-        print 'My mousePressEvent'
+        #print 'My mousePressEvent'
         self.iniY=ev.pos().x()
         self.iniX=ev.pos().y()
         self.moving="True"
 
     def mouseReleaseEvent(self, ev):
-        print 'My mouseReleaseEvent'
+        #print 'My mouseReleaseEvent'
         self.finalY=ev.pos().x()
         self.finalX=ev.pos().y()
         self.difX=self.finalX-self.iniX
@@ -19,10 +19,10 @@ class ImageItem (pyqtgraph.ImageItem):
         self.moving="False"
 
     def mouseMoveEvent(self, ev):
-        print 'My mouseMoveEvent'
+        #print 'My mouseMoveEvent'
         self.movingY=ev.pos().x()
         self.movingX=ev.pos().y()
 
     def mouseDragEvent(self, ev):
-        print 'My mouseDragEvent'
+        #print 'My mouseDragEvent'
         pass
