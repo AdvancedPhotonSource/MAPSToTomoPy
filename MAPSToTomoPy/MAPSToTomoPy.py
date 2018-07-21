@@ -1950,37 +1950,22 @@ class Example(QtGui.QMainWindow):
             if self.fileNames == [""]:
                 raise IndexError
             self.selectFiles()
-            self.RH2 = copy(self.fileNames)
-            self.snf()
-            # print self.RH2.__class__.__name__
-            # b = a.__dict__.keys()
-            # for i in range(1,len(b)):
-            #       print b[i]
+            self.SendNumFiles()
 
-            # e = list.__dict__.keys()
-            # for i in range(1,len(e)):
-            #       print e[i]
         except IndexError, AttributeError:
             print "no file has been selected"
         except IOError:
             print "no file has been selected"
 
     '''
-    puses the number of files opened so that the Gui
-    shows the right number of checkboxes
+    passes the number of files opened so that the Gui
+    shows the right number of checkboxes (NOT WORKING YET)
+    Qselect()-->initUI() --> numfiles = Example().SendNumFiles()
     '''
 
-    def snf(self):
-        self.x = self.RH2
-        for i in range(0, len(self.x)):
-            print self.x[i]
-        a = Example()
-        b = a.__dict__.keys()
-        for i in range(1, len(b)):
-            print b[i]
-            # return self.x
-        # print type(self.x)
-        # print self.x.__class__.__name__
+    def SendNumFiles(self):
+        self.numfiles = len(self.fileNames)
+        return self.numfiles
 
     # ================
     # def openfolder(self):
@@ -2144,6 +2129,7 @@ class Example(QtGui.QMainWindow):
         self.y = y
 
         if self.dataTag != "XRF_roi":
+            self.data = zeros([self.channels, self.projections, self.y, self.x])
             for i in arange(self.projections):
                 file_name = os.path.abspath(self.selectedFiles[i])
                 f = h5py.File(file_name, "r")
@@ -2453,16 +2439,8 @@ class QSelect(QtGui.QWidget):
     def initUI(self):
         names = list()
         # Ex = Example()
-        # print Ex.__dict__keys()
-        # ahh = Ex.__dict__keys()
-        # for i in range(1,len(Ex)):
-        #       print Ex[i]
-        # print names.__class__.__name__
-        # nf = list()
-        # nf = Example().snf()
-        # print nf
-        # nf.append(Example().snf())
-        # print nf
+        # numfiles = Ex.SendNumFiles()
+        # for i in arange(numfiles):
         for i in arange(130):
             names.append("")
         self.grid = QtGui.QGridLayout()
