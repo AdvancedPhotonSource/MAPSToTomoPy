@@ -152,7 +152,7 @@ class Example(QtGui.QMainWindow):
         self.tab_widget = QtGui.QTabWidget()
         # self.tab_widget.addTab(self.createMessageWidget(), unicode("Message"))
         self.tab_widget.addTab(self.createImageProcessWidget(), unicode("Image Process"))
-        self.tab_widget.addTab(self.createSaveHotspotWidget(), unicode("Alignment"))
+        self.tab_widget.addTab(self.createSaveHotspotWidget(), unicode("Hotspot"))
         self.tab_widget.addTab(self.createSinoWidget(), unicode("Sinogram"))
         self.tab_widget.addTab(self.createReconWidget(), unicode("Reconstruction"))
         # self.tab_widget.addTab(self.sinoGroup, unicode("Sinogram"))
@@ -214,21 +214,21 @@ class Example(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(reorderAction)
         self.afterConversionMenu.setDisabled(True)
 
-        toolbar = self.addToolBar('ToolBar')
-        toolbar.addAction(exitAction)
-        toolbar.addAction(openFileAction)
-        # toolbar.addAction(openFolderAction)
-        toolbar.addAction(saveHotSpotPosAction)
-        toolbar.addAction(alignHotSpotPosAction)
-        toolbar.addAction(exportDataAction)
-        toolbar.addAction(runTransRecAction)
-        toolbar.addAction(runCenterOfMassAction)
-        toolbar.addAction(matcherAction)
-        toolbar.addAction(runReconstructAction)
-        toolbar.addAction(selectElementAction)
-        toolbar.addAction(convertAction)
-        toolbar.addAction(saveSinogramAction)
-        toolbar.setVisible(False)
+        # toolbar = self.addToolBar('ToolBar')
+        # toolbar.addAction(exitAction)
+        # toolbar.addAction(openFileAction)
+        # # toolbar.addAction(openFolderAction)
+        # toolbar.addAction(saveHotSpotPosAction)
+        # toolbar.addAction(alignHotSpotPosAction)
+        # toolbar.addAction(exportDataAction)
+        # toolbar.addAction(runTransRecAction)
+        # toolbar.addAction(runCenterOfMassAction)
+        # toolbar.addAction(matcherAction)
+        # toolbar.addAction(runReconstructAction)
+        # toolbar.addAction(selectElementAction)
+        # toolbar.addAction(convertAction)
+        # toolbar.addAction(saveSinogramAction)
+        # toolbar.setVisible(False)
 
         add = 0
         if platform == "win32":
@@ -238,13 +238,14 @@ class Example(QtGui.QMainWindow):
         self.show()
 
     #### TEST
-    '''
-    tab1manual
-    Displays instructions for how to use the manual hotspot alignment tool 
-    in the message box. 
-    '''
+
 
     def tab1manual(self):
+        '''
+        tab1manual
+        Displays instructions for how to use the manual hotspot alignment tool
+        in the message box.
+        '''
         print self.tab_widget.currentIndex()
         if self.tab_widget.currentIndex() == 1:
             self.lbl.setText('click hotspot, press n to advance frame or press S to skip frame')
@@ -400,7 +401,7 @@ class Example(QtGui.QMainWindow):
         projViewBox = QtGui.QHBoxLayout()
         projViewBox.addWidget(self.projViewControl)
         projViewBox.addWidget(self.projView, 10)
-        projViewGroup = QtGui.QGroupBox("Save HotSpot")
+        projViewGroup = QtGui.QGroupBox("Alignment")
         projViewGroup.setLayout(projViewBox)
         return projViewGroup
 
@@ -448,7 +449,7 @@ class Example(QtGui.QMainWindow):
         '''
         self.comer = QSelect3()
         self.comer.setWindowTitle("Center of Mass window")
-        self.conmer.numb = len(self.channelname)
+        self.comer.numb = len(self.channelname)
         for j in arange(self.comer.numb):
             self.comer.combo.addItem(self.channelname[j])
         self.comer.btn.setText("Center of Mass")
@@ -1836,7 +1837,6 @@ class Example(QtGui.QMainWindow):
                 self.channels, self.y, self.x = f[self.ImageTag]["data"].shape
             except KeyError:
                 self.dataTag = "XRF_roi"
-                global wha
                 self.channelnameTemp1 = f[self.ImageTag]["channel_names"]
 
                 self.channelnameTemp2 = f[self.ImageTag]["scaler_names"]
@@ -1957,13 +1957,14 @@ class Example(QtGui.QMainWindow):
         except IOError:
             print "no file has been selected"
 
-    '''
-    passes the number of files opened so that the Gui
-    shows the right number of checkboxes (NOT WORKING YET)
-    Qselect()-->initUI() --> numfiles = Example().SendNumFiles()
-    '''
+
 
     def SendNumFiles(self):
+        '''
+        passes the number of files opened so that the Gui
+        shows the right number of checkboxes (NOT WORKING YET)
+        Qselect()-->initUI() --> numfiles = Example().SendNumFiles()
+        '''
         self.numfiles = len(self.fileNames)
         return self.numfiles
 
@@ -2484,7 +2485,6 @@ class QSelect(QtGui.QWidget):
         self.setWindowTitle('Calculator')
         self.show()
 
-
 ####==================
 class QSelect2(QtGui.QWidget):
 
@@ -2773,7 +2773,6 @@ class imageProcess(QtGui.QWidget):
         self.ySize -= 1
         self.ySizeTxt.setText(str(self.ySize))
 
-
 class IView(pg.GraphicsLayoutWidget):
 
     def __init__(self):
@@ -2930,7 +2929,6 @@ class IView3(QtGui.QWidget):
 
     def initUI(self):
         self.show()
-
         hb3 = QtGui.QHBoxLayout()
         self.file_name_title = QtGui.QLabel("_")
         lbl1 = QtGui.QLabel("x pos")
@@ -2968,7 +2966,6 @@ class IView3(QtGui.QWidget):
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_N:
             self.sld.setValue(self.sld.value + 1)
-            print "Yes"
 
     def updatePanel(self):
         self.lbl2.setText(str(self.view.projView.iniX))
