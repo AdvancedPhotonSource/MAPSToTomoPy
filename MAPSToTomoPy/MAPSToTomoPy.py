@@ -28,10 +28,8 @@ import MyImageItem
 from copy import copy
 from pprint import pprint
 
-
 # import subpixelshift
 # from subpixelshift import *
-
 
 class Example(QtGui.QMainWindow):
     def __init__(self):
@@ -121,6 +119,9 @@ class Example(QtGui.QMainWindow):
         matcherAction = QtGui.QAction("match template", self)
         matcherAction.triggered.connect(self.match_window)
 
+        configurationAction = QtGui.QAction("Configuration Window", self)
+        configurationAction.triggered.connect(self.configurationWindow)
+
         exportDataAction = QtGui.QAction("export data", self)
         exportDataAction.triggered.connect(self.export_data)
 
@@ -176,6 +177,7 @@ class Example(QtGui.QMainWindow):
         ## Top menu bar [file   Convert Option    Alignment   After saving in memory]
         menubar = self.menuBar()
         self.fileMenu = menubar.addMenu('&File')
+        self.fileMenu.addAction(configurationAction) #to replace readconfiguration Action
         self.fileMenu.addAction(readConfigAction)
         self.fileMenu.addAction(openFileAction)
         # self.fileMenu.addAction(openFolderAction)
@@ -656,7 +658,6 @@ class Example(QtGui.QMainWindow):
         for j in arange(self.matcher.numb):
             self.matcher.combo.addItem(self.channelname[j])
         self.matcher.btn.setText("Match Template")
-
         self.matcher.btn2.setText("Restore")
         self.matcher.btn.clicked.connect(self.match)
         self.matcher.btn2.clicked.connect(self.restore)
@@ -1816,6 +1817,8 @@ class Example(QtGui.QMainWindow):
         self.projViewControl.combo.setCurrentIndex(1)
         self.projViewControl.combo.setCurrentIndex(0)
         self.filecheck.setVisible(False)
+        # self.fcheck.setVisible(False)
+
         # self.x.show()
 
     def selectElement(self):
@@ -1849,7 +1852,6 @@ class Example(QtGui.QMainWindow):
             self.element.button[i].setChecked(True)
         self.element.setWindowTitle("Select Element")
         self.element.setVisible(False)
-
         self.element.btn2.setText("Deselect All")
         self.element.btn.setText("set Element")
         self.element.btn.clicked.connect(self.setElement)
@@ -1930,11 +1932,117 @@ class Example(QtGui.QMainWindow):
         self.filecheck.btn3.clicked.connect(self.selectElementShow)
         self.selectElement()
 
+    def selectFiles2(self):
+        self.filecheck = QtGui.QWidget()
+        names = list()  
+        boxnum = len(self.fileNames)
+        col = (boxnum/10) + (boxnum%10>0)
+        for i in arange(boxnum):
+            names.append("")
+        self.filecheck.grid = QtGui.QGridLayout()
+        self.filecheck.lbl = QtGui.QLabel("closing this window won't affect your selection of the files",self)
+        self.filecheck.lbl2 = QtGui.QLabel("You should convert the files in order to generate sinogram or reconstructed data",self)
+        self.filecheck.btn = QtGui.QPushButton('Save Data in Memory', self)
+        self.filecheck.btn2 = QtGui.QPushButton("set Image Tag", self)
+        self.filecheck.btn3 = QtGui.QPushButton("set Element", self)
+
+        j = 0
+        pos = list()
+        for y in arange(col):
+            for x in arange(10):
+                pos.append((x, y))
+
+        self.filecheck.button = list()
+        for i in names:
+            self.filecheck.button.append(QtGui.QCheckBox(i))
+            self.filecheck.grid.addWidget(self.filecheck.button[j], pos[j][0], pos[j][1])
+            j = j + 1
+        
+        self.filecheck.setLayout(self.filecheck.grid)
+        self.filecheck.vb = QtGui.QVBoxLayout() 
+        self.filecheck.vb2 = QtGui.QVBoxLayout()
+
+        self.filecheck.vb.addWidget(self.filecheck.lbl, 12)
+        self.filecheck.vb.addWidget(self.filecheck.lbl2, 13) 
+        #[closing...]
+        #[you should..]
+
+        hb = QtGui.QHBoxLayout()
+        hb.addWidget(self.filecheck.btn2)
+        hb.addWidget(self.filecheck.btn3)
+        #[se img tg][set elem]
+
+        self.filecheck.vb2.addLayout(hb)
+        self.filecheck.vb2.addWidget(self.filecheck.btn)
+        #[se img tg][set elem]
+        #[Save Data in Memory]
+
+        self.filecheck.grid.addLayout(self.filecheck.vb, 11, 0, 1, 7)
+        self.filecheck.grid.addLayout(self.filecheck.vb2, 13, 1, 1, 3)
+
+        self.filecheck.move(100, 100)
+        self.filecheck.setWindowTitle('Calculator')
+        self.filecheck.show()   
+
+        degree_sign = u'\N{DEGREE SIGN}'
+
+        counter = -1
+        for i in range(len(self.fileNames)):
+            counter = counter+1
+            ttmp = self.fileNames[i].rfind("/")
+            self.fileNames[i] = str(self.fileNames[i])
+            f = h5py.File(os.path.abspath(self.fileNames[i]), "r")
+            onlyfilename = self.fileNames[i].rfind("_")
+            if onlyfilename == -1:
+                onlyfilename = self.fileNames[i].rfind("/")
+            self.filecheck.button[counter].setText(self.fileNames[i][onlyfilename + 1:] + " (" + str(self.theta[i]) + degree_sign + ")")
+            self.filecheck.button[counter].setChecked(True)
+        self.ImageTag = f.items()[-1][0]
+        self.filecheck.lbl.setText("Image Tag has been set to \"" + self.ImageTag + "\"")
+        self.filecheck.setWindowTitle("Select files")
+        self.optionMenu.setEnabled(True)
+        self.filecheck.btn2.setVisible(True)
+        self.filecheck.btn.clicked.connect(self.convert)
+        self.filecheck.btn2.clicked.connect(self.selectImageTag)
+        self.filecheck.btn3.clicked.connect(self.selectElementShow)
+        self.selectElement()
+
     def selectFilesShow(self):
         self.filecheck.setVisible(True)
+        # self.fcheck.setVisible(True)
 
-    # for i in arange(len(self.fileNames)):
-    #           self.fileNames[i]=str(self.fileNames[i])
+    def configurationWindow(self):
+        self.conf = QtGui.QWidget()
+        self.conf.grid = QtGui.QGridLayout()
+        self.conf.setLayout(self.conf.grid)
+        self.conf.lbl1 = QtGui.QLabel("Select beamline")
+        self.conf.lbl2 = QtGui.QLabel("Enter PV if other than default")
+        self.conf.lbl3 = QtGui.QLabel("NOTE: PV for 2-IDE data processed before Feb 2018 is 657")
+        self.conf.btn = QtGui.QPushButton("Okay")
+        self.conf.txtfield = QtGui.QLineEdit("8")
+        self.conf.txtfield2 = QtGui.QLineEdit("663")
+        self.conf.button = QtGui.QCheckBox("Bionanoprobe")
+        self.conf.button2 = QtGui.QCheckBox("2-IDE")
+
+
+        vb = QtGui.QVBoxLayout()
+        vb.addWidget(self.conf.lbl1,1)
+        vb.addWidget(self.conf.button,2)
+        vb.addWidget(self.conf.button2,3)
+        vb2 = QtGui.QVBoxLayout()
+        vb2.addWidget(self.conf.lbl2,1)
+        vb2.addWidget(self.conf.txtfield,2)
+        vb2.addWidget(self.conf.txtfield2,3)
+        vb3 = QtGui.QVBoxLayout()
+        vb3.addWidget(self.conf.lbl3)
+        vb3.addWidget(self.conf.btn)
+
+        self.conf.grid.addLayout(vb,0,0,2,1)
+        self.conf.grid.addLayout(vb2,0,1,2,1)
+        self.conf.grid.addLayout(vb3,4,0,2,2)
+
+        self.conf.setWindowTitle('Configuration')
+        self.conf.show()
 
     def openfile(self):
         '''
@@ -1944,29 +2052,29 @@ class Example(QtGui.QMainWindow):
         try:
             fileNametemp = QtGui.QFileDialog.getOpenFileNames(self, "Open File",
                                                               QtCore.QDir.currentPath(), filter="h5 (*.h5)")
-            # print fileNametemp
-            self.fileNames = str(fileNametemp.join("\n")).split("\n")
-            # self.sendnumfiles()
-            if self.fileNames == [""]:
+            fileNamestemp2 = str(fileNametemp.join("\n")).split("\n")
+            if fileNamestemp2 == [""]:
                 raise IndexError
-            self.selectFiles()
-            self.SendNumFiles()
+
+            self.fileNames, self.theta, thetaindx, gtmp = [],[],[],[]
+            counter = -1
+            for i in range(len(fileNamestemp2)):
+                gtmp.append(h5py.File(os.path.abspath(fileNamestemp2[i]),"r"))
+                f = h5py.File(os.path.abspath(fileNamestemp2[i]),"r")
+                tmp = string.rfind(f["MAPS"]["extra_pvs_as_csv"][self.thetaPos], ",")
+                thetatmp = round(float(f["MAPS"]["extra_pvs_as_csv"][self.thetaPos][tmp+1:]))
+                thetaindx = np.append(thetaindx,thetatmp)
+
+            for j in np.argsort(thetaindx):
+                counter = counter+1
+                self.fileNames.append(fileNamestemp2[j])
+                self.theta.append(thetaindx[j])
+            self.selectFiles2()
 
         except IndexError, AttributeError:
             print "no file has been selected"
         except IOError:
             print "no file has been selected"
-
-
-
-    def SendNumFiles(self):
-        '''
-        passes the number of files opened so that the Gui
-        shows the right number of checkboxes (NOT WORKING YET)
-        Qselect()-->initUI() --> numfiles = Example().SendNumFiles()
-        '''
-        self.numfiles = len(self.fileNames)
-        return self.numfiles
 
     # ================
     # def openfolder(self):
@@ -2097,6 +2205,7 @@ class Example(QtGui.QMainWindow):
         k = arange(y.shape[0])
         for i in arange(len(self.fileNames)):
             y[i] = self.filecheck.button[i].isChecked()
+            # y[i] = self.fcheck.button[i].isChecked()
 
         self.selectedFiles = [self.fileNames[f] for f in k if y[f] == True]
 

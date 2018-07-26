@@ -301,9 +301,9 @@ class Example(QtGui.QMainWindow):
 		self.conf.grid.addLayout(vb,0,0,2,1)
 		self.conf.grid.addLayout(vb2,0,1,2,1)
 		self.conf.grid.addLayout(vb3,4,0,2,2)
-
 		self.conf.setWindowTitle('Configuration')
 		self.conf.show()
+		
 
 	def centerOfMassWindow(self):
 		''' Creates the window for alignment with center of mass 
