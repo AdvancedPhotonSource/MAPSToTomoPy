@@ -13,7 +13,7 @@ from pylab import *
 '''general Notes:
 Iview1-3 generate graphics such as the projections,
 sinograms and the graphic on the right edge on all of the tabs 
-i.e IView2 is responsible for the graph on the right edge. 
+i.e IView3 is responsible for the graph on the right edge. 
 
 Qselect1-4 are responsible for the base button layouts 
 
@@ -22,9 +22,6 @@ or hides them completely based on the required task for that tab.
 
 Current issues: 
 1) expanding main window doesnt expand graphs proportionally 
-2) multiple checkboxes in 'select files' greater than number of files in directory
-	potential issue with exceeding 130 files 
-3) 
 '''
 
 class Example(QtGui.QMainWindow):
@@ -62,6 +59,9 @@ class Example(QtGui.QMainWindow):
 		matcherAction = QtGui.QAction("match template", self)
 		matcherAction.triggered.connect(self.match_window)
 		
+		configurationAction = QtGui.QAction("Configuration Window", self)
+		configurationAction.triggered.connect(self.configurationWindow)
+
 		openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
 		# openTiffFolderAction.triggered.connect(self.openTiffFolder)
 		sinogramAction = QtGui.QAction('Sinogram', self)
@@ -127,6 +127,7 @@ class Example(QtGui.QMainWindow):
 		## Top menu bar [file   Convert Option    Alignment   After saving in memory]
 		menubar = self.menuBar()
 		self.fileMenu = menubar.addMenu('&File')
+		self.fileMenu.addAction(configurationAction)
 		self.fileMenu.addAction(readConfigAction)
 		self.fileMenu.addAction(openFileAction)
 		self.fileMenu.addAction(openTiffFolderAction)
@@ -271,6 +272,38 @@ class Example(QtGui.QMainWindow):
 		projectionGroup = QtGui.QGroupBox("Projections")
 		projectionGroup.setLayout(projectionBox)
 		return projectionGroup
+
+	def configurationWindow(self):
+		self.conf = QtGui.QWidget()
+		self.conf.grid = QtGui.QGridLayout()
+		self.conf.setLayout(self.conf.grid)
+		self.conf.lbl1 = QtGui.QLabel("Select beamline")
+		self.conf.lbl2 = QtGui.QLabel("Enter PV if other than default")
+		self.conf.lbl3 = QtGui.QLabel("NOTE: PV for 2-IDE data processed before Feb 2018 is 657")
+		self.conf.btn = QtGui.QPushButton("Okay")
+		self.conf.txtfield = QtGui.QLineEdit("8")
+		self.conf.txtfield2 = QtGui.QLineEdit("663")
+		self.conf.button = QtGui.QCheckBox("Bionanoprobe")
+		self.conf.button2 = QtGui.QCheckBox("2-IDE")
+
+		vb = QtGui.QVBoxLayout()
+		vb.addWidget(self.conf.lbl1,1)
+		vb.addWidget(self.conf.button,2)
+		vb.addWidget(self.conf.button2,3)
+		vb2 = QtGui.QVBoxLayout()
+		vb2.addWidget(self.conf.lbl2,1)
+		vb2.addWidget(self.conf.txtfield,2)
+		vb2.addWidget(self.conf.txtfield2,3)
+		vb3 = QtGui.QVBoxLayout()
+		vb3.addWidget(self.conf.lbl3)
+		vb3.addWidget(self.conf.btn)
+
+		self.conf.grid.addLayout(vb,0,0,2,1)
+		self.conf.grid.addLayout(vb2,0,1,2,1)
+		self.conf.grid.addLayout(vb3,4,0,2,2)
+
+		self.conf.setWindowTitle('Configuration')
+		self.conf.show()
 
 	def centerOfMassWindow(self):
 		''' Creates the window for alignment with center of mass 
@@ -839,7 +872,13 @@ class SinoWidget(pg.QtGui.QWidget):
 	def getShape(self):
 		self.regShift = zeros(self.projData.shape[0], dtype=int)
 
+class QSelectTEST(QtGui.QWidget):
+	def __init__(self):
+		super(QSelectTEST, self).__init__()
+		self.initUI()
 
+	def initUI(self):
+		pass
 
 
 
