@@ -59,8 +59,8 @@ class Example(QtGui.QMainWindow):
 		matcherAction = QtGui.QAction("match template", self)
 		matcherAction.triggered.connect(self.match_window)
 		
-		configurationAction = QtGui.QAction("Configuration Window", self)
-		configurationAction.triggered.connect(self.configurationWindow)
+		selectBeamlineAction = QtGui.QAction("select beamline", self)
+		selectBeamlineAction.triggered.connect(self.selectBeamline)
 
 		openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
 		# openTiffFolderAction.triggered.connect(self.openTiffFolder)
@@ -86,8 +86,6 @@ class Example(QtGui.QMainWindow):
 		# saveAlignToTextAction.triggered.connect(self.saveAlignToText)
 		restoreAction = QtGui.QAction("Restore", self)
 		# restoreAction.triggered.connect(self.restore)
-		readConfigAction = QtGui.QAction("Read configuration file", self)
-		# readConfigAction.triggered.connect(self.readConfigFile)
 		alignCenterOfMassAction = QtGui.QAction("Align by fitting center of mass position into sine curve", self)
 		# alignCenterOfMassAction.triggered.connect(self.alignCenterOfMass)
 		exportDataAction = QtGui.QAction("export data", self)
@@ -127,8 +125,7 @@ class Example(QtGui.QMainWindow):
 		## Top menu bar [file   Convert Option    Alignment   After saving in memory]
 		menubar = self.menuBar()
 		self.fileMenu = menubar.addMenu('&File')
-		self.fileMenu.addAction(configurationAction)
-		self.fileMenu.addAction(readConfigAction)
+		self.fileMenu.addAction(selectBeamlineAction) #to replace readconfiguration Action
 		self.fileMenu.addAction(openFileAction)
 		self.fileMenu.addAction(openTiffFolderAction)
 		self.fileMenu.addAction(exitAction)
@@ -263,6 +260,7 @@ class Example(QtGui.QMainWindow):
 	def createProjWidget(self):
 		'''create a projection group for projection tab. returns projection group
 		'''
+
 		self.projection = QSelect2()
 		self.projectionView = pg.ImageView()
 
@@ -273,37 +271,9 @@ class Example(QtGui.QMainWindow):
 		projectionGroup.setLayout(projectionBox)
 		return projectionGroup
 
-	def configurationWindow(self):
-		self.conf = QtGui.QWidget()
-		self.conf.grid = QtGui.QGridLayout()
-		self.conf.setLayout(self.conf.grid)
-		self.conf.lbl1 = QtGui.QLabel("Select beamline")
-		self.conf.lbl2 = QtGui.QLabel("Enter PV if other than default")
-		self.conf.lbl3 = QtGui.QLabel("NOTE: PV for 2-IDE data processed before Feb 2018 is 657")
-		self.conf.btn = QtGui.QPushButton("Okay")
-		self.conf.txtfield = QtGui.QLineEdit("8")
-		self.conf.txtfield2 = QtGui.QLineEdit("663")
-		self.conf.button = QtGui.QCheckBox("Bionanoprobe")
-		self.conf.button2 = QtGui.QCheckBox("2-IDE")
-
-		vb = QtGui.QVBoxLayout()
-		vb.addWidget(self.conf.lbl1,1)
-		vb.addWidget(self.conf.button,2)
-		vb.addWidget(self.conf.button2,3)
-		vb2 = QtGui.QVBoxLayout()
-		vb2.addWidget(self.conf.lbl2,1)
-		vb2.addWidget(self.conf.txtfield,2)
-		vb2.addWidget(self.conf.txtfield2,3)
-		vb3 = QtGui.QVBoxLayout()
-		vb3.addWidget(self.conf.lbl3)
-		vb3.addWidget(self.conf.btn)
-
-		self.conf.grid.addLayout(vb,0,0,2,1)
-		self.conf.grid.addLayout(vb2,0,1,2,1)
-		self.conf.grid.addLayout(vb3,4,0,2,2)
-		self.conf.setWindowTitle('Configuration')
+	def selectBeamline(self):
+		self.conf = ConfigurationWindow()
 		self.conf.show()
-		
 
 	def centerOfMassWindow(self):
 		''' Creates the window for alignment with center of mass 
@@ -509,13 +479,15 @@ class AlignWindow(QtGui.QWidget):
 		self.setLayout(vb)
 
 class QSelect(QtGui.QWidget):
-	def __init__(self):
+	def __init__(self, labels = 30):
 		super(QSelect, self).__init__()
+		self.numlabels = labels
 		self.initUI()
 
 	def initUI(self):
 		names = list()
-		for i in arange(130):
+
+		for i in arange(self.numlabels):
 			names.append("")
 		self.grid = QtGui.QGridLayout()
 		self.lbl = QtGui.QLabel()
@@ -526,10 +498,12 @@ class QSelect(QtGui.QWidget):
 		self.btn2 = QtGui.QPushButton("set Image Tag", self)
 		self.btn3 = QtGui.QPushButton("set Element", self)
 
+		columns = np.ceil(np.sqrt(self.numlabels))
+		rows = 10
 		j = 0
 		pos = list()
-		for y in arange(13):
-			for x in arange(10):
+		for y in arange(columns):
+			for x in arange(rows):
 				pos.append((x, y))
 
 		self.button = list()
@@ -542,8 +516,8 @@ class QSelect(QtGui.QWidget):
 		self.vb = QtGui.QVBoxLayout()
 		self.vb2 = QtGui.QVBoxLayout()
 
-		self.vb.addWidget(self.lbl, 11)
-		self.vb.addWidget(self.lbl2, 12)
+		self.vb.addWidget(self.lbl, 12)
+		self.vb.addWidget(self.lbl2, 13)
 
 		hb = QtGui.QHBoxLayout()
 		hb.addWidget(self.btn2)
@@ -551,8 +525,8 @@ class QSelect(QtGui.QWidget):
 		self.vb2.addLayout(hb)
 		self.vb2.addWidget(self.btn)
 
-		self.grid.addLayout(self.vb, 11, 0, 1, 10)
-		self.grid.addLayout(self.vb2, 13, 3, 1, 2)
+		self.grid.addLayout(self.vb, 11, 0, 1, 7)
+		self.grid.addLayout(self.vb2, 13, 1, 1, 3)
 
 		self.move(100, 100)
 		self.setWindowTitle('Calculator')
@@ -719,6 +693,46 @@ class QSelect4(QtGui.QWidget):
 		vb.addWidget(self.btn3)
 		vb.addWidget(self.btn4)
 		self.setLayout(vb)
+
+class ConfigurationWindow(QtGui.QWidget):
+    def __init__(self):
+        super(ConfigurationWindow, self).__init__()
+        self.initUI()
+        
+    def initUI(self):
+        self.grid = QtGui.QGridLayout()
+        self.setLayout(self.grid)
+        self.lbl1 = QtGui.QLabel("Select beamline")
+        self.lbl2 = QtGui.QLabel("Enter theta position pv if other than default")
+        self.lbl3 = QtGui.QLabel("Warning Message")
+        self.lbl4 = QtGui.QLabel("NOTE: PV for 2-IDE data processed before Feb 2018 is 657")
+        self.btn = QtGui.QPushButton("Okay")
+        self.txtfield = QtGui.QLineEdit("8")
+        self.txtfield2 = QtGui.QLineEdit("663")
+        self.button = QtGui.QCheckBox("Bionanoprobe")
+        self.button2 = QtGui.QCheckBox("2-IDE")
+        self.setWindowTitle('Configuration')
+        self.btn.setAutoRepeat(True)
+
+        vb = QtGui.QVBoxLayout()
+        vb.addWidget(self.lbl1,1)
+        vb.addWidget(self.button,2)
+        vb.addWidget(self.button2,3)
+        vb2 = QtGui.QVBoxLayout()
+        vb2.addWidget(self.lbl2,1)
+        vb2.addWidget(self.txtfield,2)
+        vb2.addWidget(self.txtfield2,3)
+        vb3 = QtGui.QVBoxLayout()
+        vb3.addWidget(self.lbl3)
+        vb3.addWidget(self.lbl4)
+        vb4 = QtGui.QVBoxLayout()
+        vb4.addWidget(self.btn)
+
+        self.grid.addLayout(vb,0,0,2,1)
+        self.grid.addLayout(vb2,0,1,2,2)
+        self.grid.addLayout(vb3,4,0,2,3)
+        self.grid.addLayout(vb4,6,1,1,1)
+
 
 class imageProcess(QtGui.QWidget):
 	def __init__(self):

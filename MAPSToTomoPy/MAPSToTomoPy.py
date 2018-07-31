@@ -37,7 +37,9 @@ class Example(QtGui.QMainWindow):
         self.initUI()
 
     def initUI(self):
-
+        self.fileNames = []
+        self.theta = []
+        self.f = []
         ##            textEdit = QtGui.QTextEdit()
         ##            self.setCentralWidget(textEdit)
 
@@ -107,8 +109,8 @@ class Example(QtGui.QMainWindow):
         restoreAction = QtGui.QAction("Restore", self)
         restoreAction.triggered.connect(self.restore)
 
-        readConfigAction = QtGui.QAction("Read configuration file", self)
-        readConfigAction.triggered.connect(self.readConfigFile)
+        # readConfigAction = QtGui.QAction("Read configuration file", self)
+        # readConfigAction.triggered.connect(self.readConfigFile)
 
         runCenterOfMassAction = QtGui.QAction("run center of mass action", self)
         runCenterOfMassAction.triggered.connect(self.centerOfMassWindow)
@@ -119,8 +121,8 @@ class Example(QtGui.QMainWindow):
         matcherAction = QtGui.QAction("match template", self)
         matcherAction.triggered.connect(self.match_window)
 
-        configurationAction = QtGui.QAction("Configuration Window", self)
-        configurationAction.triggered.connect(self.configurationWindow)
+        selectBeamlineAction = QtGui.QAction("configuration", self)
+        selectBeamlineAction.triggered.connect(self.selectBeamline)
 
         exportDataAction = QtGui.QAction("export data", self)
         exportDataAction.triggered.connect(self.export_data)
@@ -177,8 +179,8 @@ class Example(QtGui.QMainWindow):
         ## Top menu bar [file   Convert Option    Alignment   After saving in memory]
         menubar = self.menuBar()
         self.fileMenu = menubar.addMenu('&File')
-        self.fileMenu.addAction(configurationAction) #to replace readconfiguration Action
-        self.fileMenu.addAction(readConfigAction)
+        self.fileMenu.addAction(selectBeamlineAction) #to replace readconfiguration Action
+        # self.fileMenu.addAction(readConfigAction)
         self.fileMenu.addAction(openFileAction)
         # self.fileMenu.addAction(openFolderAction)
         self.fileMenu.addAction(openTiffFolderAction)
@@ -1587,7 +1589,6 @@ class Example(QtGui.QMainWindow):
         self.reconProjNumb = self.reconView.sld.value()
         self.recon.maxText.setText(str(self.rec[self.reconProjNumb, :, :].max()))
         self.recon.minText.setText(str(self.rec[self.reconProjNumb, :, :].min()))
-
         self.reconView.view.projView.setImage(self.rec[self.reconProjNumb, :, :])
 
     def runReconstruct(self):
@@ -1825,28 +1826,26 @@ class Example(QtGui.QMainWindow):
         '''
         loads select element window
         '''
-        self.element = QSelect()
-        f = h5py.File(os.path.abspath(self.fileNames[0]), "r")
 
         try:
-            self.channelnameTemp = list(f[self.ImageTag]["images_names"])
+            self.channelnameTemp = list(self.f[0][self.ImageTag]["images_names"])
             self.dataTag = "images"
-
-            self.channels, self.y, self.x = f[self.ImageTag]["images"].shape
+            self.channels, self.y, self.x = self.f[0][self.ImageTag]["images"].shape
         except KeyError:
             try:
                 self.dataTag = "data"
-                self.channelnameTemp = list(f[self.ImageTag]["channel_names"])
-                self.channels, self.y, self.x = f[self.ImageTag]["data"].shape
+                self.channelnameTemp = list(self.f[0][self.ImageTag]["channel_names"])
+                self.channels, self.y, self.x = self.f[0][self.ImageTag]["data"].shape
             except KeyError:
                 self.dataTag = "XRF_roi"
-                self.channelnameTemp1 = f[self.ImageTag]["channel_names"]
+                self.channelnameTemp1 = self.f[0][self.ImageTag]["channel_names"]
 
-                self.channelnameTemp2 = f[self.ImageTag]["scaler_names"]
-                self.channels1, self.y, self.x = f[self.ImageTag]["XRF_roi"].shape
+                self.channelnameTemp2 = self.f[0][self.ImageTag]["scaler_names"]
+                self.channels1, self.y, self.x = self.f[0][self.ImageTag]["XRF_roi"].shape
                 self.channels = self.channels1 + len(self.channelnameTemp2)
                 self.channelnameTemp = list(self.channelnameTemp1) + list(self.channelnameTemp2)
 
+        self.element = QSelect(self.channels)
         for i in arange(len(self.channelnameTemp)):
             self.element.button[i].setText(self.channelnameTemp[i])
             self.element.button[i].setChecked(True)
@@ -1889,8 +1888,65 @@ class Example(QtGui.QMainWindow):
     def selectElementShow(self):
         self.element.setVisible(True)
 
-    # def selectFilesHide(self):
-    #       self.filecheck.setVisible(False)
+    def selectFilesShow(self):
+        self.filecheck.setVisible(True)
+        # self.fcheck.setVisible(True)
+
+    def selectBeamline(self, message=""):
+        self.conf = ConfigurationWindow()
+        if type(message) == str:
+            self.conf.lbl3.setText(message)
+        self.conf.show()
+        self.conf.btn.clicked.connect(self.beamline)
+
+    def beamline(self):
+        bnp = self.conf.button.isChecked()
+        twoide = self.conf.button2.isChecked()
+        thetaposbnp = self.conf.txtfield.text()
+        thetapos2ide = self.conf.txtfield2.text()
+
+        if bnp == 0 and twoide == 0:
+            self.conf.hide()
+            self.selectBeamline("please select a beamline")
+        elif bnp == 0 and twoide == 1:
+            self.thetaPos = int(thetapos2ide)
+            self.conf.hide()
+            self.openfile()
+        elif bnp == 1 and twoide == 0:
+            self.thetaPos = int(thetaposbnp)
+            self.conf.hide()
+            self.openfile()
+        elif bnp == 1 and twoide == 1:
+            self.conf.hide()
+            self.selectBeamline("please select only one beamline")
+
+    def openfile(self):
+        '''
+        opens multiple h5 files.
+        '''
+        self.fileNames, self.theta, self.f = [],[],[]
+        try:
+            fileNametemp = QtGui.QFileDialog.getOpenFileNames(self, "Open File", QtCore.QDir.currentPath(), filter="h5 (*.h5)")
+            self.fileNames = str(fileNametemp.join("\n")).split("\n")
+            if self.fileNames == [""]: 
+                raise IndexError
+            self.fileNames = np.array(self.fileNames)
+
+            for i in range(len(self.fileNames)):
+                self.f.append(h5py.File(os.path.abspath(self.fileNames[i]),"r"))
+                tmp = string.rfind(self.f[i]["MAPS"]["extra_pvs_as_csv"][self.thetaPos], ",")
+                thetatmp = round(float(self.f[i]["MAPS"]["extra_pvs_as_csv"][self.thetaPos][tmp+1:]))
+                self.theta = np.append(self.theta,thetatmp)
+
+            sortedindx = np.argsort(self.theta)
+            self.fileNames = self.fileNames[sortedindx]
+            self.theta = self.theta[sortedindx]
+            self.selectFiles()
+            print 'testpoint'
+        except IndexError, AttributeError:
+            print "no file has been selected"
+        except IOError:
+            print "no file has been selected"
 
     def selectFiles(self):
         '''
@@ -1905,200 +1961,24 @@ class Example(QtGui.QMainWindow):
               index where the angle information is saved in
               extra_pvs_as_csv
         '''
+        numfiles = len(self.fileNames)
+        self.filecheck = QSelect(numfiles)
 
-        self.filecheck = QSelect()
-        # self.filecheck.show()
-        # self.filecheck.activateWindow()
-        # self.filecheck.raise_()
         degree_sign = u'\N{DEGREE SIGN}'
         for i in arange(len(self.fileNames)):
-            self.fileNames[i] = str(self.fileNames[i])
-            f = h5py.File(os.path.abspath(self.fileNames[i]), "r")
-            thetatemp = f["MAPS"]["extra_pvs_as_csv"][self.thetaPos]
-            thetapos = string.rfind(thetatemp, ",")
-            theta = str(round(float(thetatemp[thetapos + 1:])))
-            onlyfilename = self.fileNames[i].rfind("_")
-            if onlyfilename == -1:
-                onlyfilename = self.fileNames[i].rfind("/")
-            self.filecheck.button[i].setText(self.fileNames[i][onlyfilename + 1:] + " (" + theta + degree_sign + ")")
+            onlyfilename = self.fileNames[i].rfind("/")
+            self.filecheck.button[i].setText(self.fileNames[i][onlyfilename + 1:] + " (" + str(self.theta[i]) + degree_sign + ")")
             self.filecheck.button[i].setChecked(True)
-        self.ImageTag = f.items()[-1][0]
+        self.ImageTag = self.f[1].items()[-1][0]
         self.lbl.setText("Image Tag has been set to \"" + self.ImageTag + "\"")
         self.filecheck.setWindowTitle("Select files")
         self.optionMenu.setEnabled(True)
         self.filecheck.btn2.setVisible(True)
+        self.filecheck.show()
         self.filecheck.btn.clicked.connect(self.convert)
         self.filecheck.btn2.clicked.connect(self.selectImageTag)
         self.filecheck.btn3.clicked.connect(self.selectElementShow)
         self.selectElement()
-
-    def selectFiles2(self):
-        self.filecheck = QtGui.QWidget()
-        names = list()  
-        boxnum = len(self.fileNames)
-        col = (boxnum/10) + (boxnum%10>0)
-        for i in arange(boxnum):
-            names.append("")
-        self.filecheck.grid = QtGui.QGridLayout()
-        self.filecheck.lbl = QtGui.QLabel("closing this window won't affect your selection of the files",self)
-        self.filecheck.lbl2 = QtGui.QLabel("You should convert the files in order to generate sinogram or reconstructed data",self)
-        self.filecheck.btn = QtGui.QPushButton('Save Data in Memory', self)
-        self.filecheck.btn2 = QtGui.QPushButton("set Image Tag", self)
-        self.filecheck.btn3 = QtGui.QPushButton("set Element", self)
-
-        j = 0
-        pos = list()
-        for y in arange(col):
-            for x in arange(10):
-                pos.append((x, y))
-
-        self.filecheck.button = list()
-        for i in names:
-            self.filecheck.button.append(QtGui.QCheckBox(i))
-            self.filecheck.grid.addWidget(self.filecheck.button[j], pos[j][0], pos[j][1])
-            j = j + 1
-        
-        self.filecheck.setLayout(self.filecheck.grid)
-        self.filecheck.vb = QtGui.QVBoxLayout() 
-        self.filecheck.vb2 = QtGui.QVBoxLayout()
-
-        self.filecheck.vb.addWidget(self.filecheck.lbl, 12)
-        self.filecheck.vb.addWidget(self.filecheck.lbl2, 13) 
-        #[closing...]
-        #[you should..]
-
-        hb = QtGui.QHBoxLayout()
-        hb.addWidget(self.filecheck.btn2)
-        hb.addWidget(self.filecheck.btn3)
-        #[se img tg][set elem]
-
-        self.filecheck.vb2.addLayout(hb)
-        self.filecheck.vb2.addWidget(self.filecheck.btn)
-        #[se img tg][set elem]
-        #[Save Data in Memory]
-
-        self.filecheck.grid.addLayout(self.filecheck.vb, 11, 0, 1, 7)
-        self.filecheck.grid.addLayout(self.filecheck.vb2, 13, 1, 1, 3)
-
-        self.filecheck.move(100, 100)
-        self.filecheck.setWindowTitle('Calculator')
-        self.filecheck.show()   
-
-        degree_sign = u'\N{DEGREE SIGN}'
-
-        counter = -1
-        for i in range(len(self.fileNames)):
-            counter = counter+1
-            ttmp = self.fileNames[i].rfind("/")
-            self.fileNames[i] = str(self.fileNames[i])
-            f = h5py.File(os.path.abspath(self.fileNames[i]), "r")
-            onlyfilename = self.fileNames[i].rfind("_")
-            if onlyfilename == -1:
-                onlyfilename = self.fileNames[i].rfind("/")
-            self.filecheck.button[counter].setText(self.fileNames[i][onlyfilename + 1:] + " (" + str(self.theta[i]) + degree_sign + ")")
-            self.filecheck.button[counter].setChecked(True)
-        self.ImageTag = f.items()[-1][0]
-        self.filecheck.lbl.setText("Image Tag has been set to \"" + self.ImageTag + "\"")
-        self.filecheck.setWindowTitle("Select files")
-        self.optionMenu.setEnabled(True)
-        self.filecheck.btn2.setVisible(True)
-        self.filecheck.btn.clicked.connect(self.convert)
-        self.filecheck.btn2.clicked.connect(self.selectImageTag)
-        self.filecheck.btn3.clicked.connect(self.selectElementShow)
-        self.selectElement()
-
-    def selectFilesShow(self):
-        self.filecheck.setVisible(True)
-        # self.fcheck.setVisible(True)
-
-    def configurationWindow(self):
-        self.conf = QtGui.QWidget()
-        self.conf.grid = QtGui.QGridLayout()
-        self.conf.setLayout(self.conf.grid)
-        self.conf.lbl1 = QtGui.QLabel("Select beamline")
-        self.conf.lbl2 = QtGui.QLabel("Enter PV if other than default")
-        self.conf.lbl3 = QtGui.QLabel("NOTE: PV for 2-IDE data processed before Feb 2018 is 657")
-        self.conf.btn = QtGui.QPushButton("Okay")
-        self.conf.txtfield = QtGui.QLineEdit("8")
-        self.conf.txtfield2 = QtGui.QLineEdit("663")
-        self.conf.button = QtGui.QCheckBox("Bionanoprobe")
-        self.conf.button2 = QtGui.QCheckBox("2-IDE")
-
-
-        vb = QtGui.QVBoxLayout()
-        vb.addWidget(self.conf.lbl1,1)
-        vb.addWidget(self.conf.button,2)
-        vb.addWidget(self.conf.button2,3)
-        vb2 = QtGui.QVBoxLayout()
-        vb2.addWidget(self.conf.lbl2,1)
-        vb2.addWidget(self.conf.txtfield,2)
-        vb2.addWidget(self.conf.txtfield2,3)
-        vb3 = QtGui.QVBoxLayout()
-        vb3.addWidget(self.conf.lbl3)
-        vb3.addWidget(self.conf.btn)
-
-        self.conf.grid.addLayout(vb,0,0,2,1)
-        self.conf.grid.addLayout(vb2,0,1,2,1)
-        self.conf.grid.addLayout(vb3,4,0,2,2)
-
-        self.conf.setWindowTitle('Configuration')
-        self.conf.show()
-
-    def openfile(self):
-        '''
-        opens multiple h5 files.
-        '''
-        # self.fileLst = []
-        try:
-            fileNametemp = QtGui.QFileDialog.getOpenFileNames(self, "Open File",
-                                                              QtCore.QDir.currentPath(), filter="h5 (*.h5)")
-            fileNamestemp2 = str(fileNametemp.join("\n")).split("\n")
-            if fileNamestemp2 == [""]:
-                raise IndexError
-
-            self.fileNames, self.theta, thetaindx, gtmp = [],[],[],[]
-            counter = -1
-            for i in range(len(fileNamestemp2)):
-                gtmp.append(h5py.File(os.path.abspath(fileNamestemp2[i]),"r"))
-                f = h5py.File(os.path.abspath(fileNamestemp2[i]),"r")
-                tmp = string.rfind(f["MAPS"]["extra_pvs_as_csv"][self.thetaPos], ",")
-                thetatmp = round(float(f["MAPS"]["extra_pvs_as_csv"][self.thetaPos][tmp+1:]))
-                thetaindx = np.append(thetaindx,thetatmp)
-
-            for j in np.argsort(thetaindx):
-                counter = counter+1
-                self.fileNames.append(fileNamestemp2[j])
-                self.theta.append(thetaindx[j])
-            self.selectFiles2()
-
-        except IndexError, AttributeError:
-            print "no file has been selected"
-        except IOError:
-            print "no file has been selected"
-
-    # ================
-    # def openfolder(self):
-    #       '''
-    #       opens the folder that contains h5 files
-    #       '''
-    #       try:
-    #             folderName = QtGui.QFileDialog.getExistingDirectory(self,"Open Folder",
-    #                                                              QtCore.QDir.currentPath())
-    #             global RH,fileName
-    #             RH=folderName
-    #             folderName=str(folderName)
-    #             file_name_array = [ f for f in os.listdir(folderName) if isfile(join(folderName,f))]
-    #             file_name_array = [ f for f in os.listdir(folderName) if string.find(f,"h5")!=-1]
-    #             file_name_array = [folderName+"/"+f for f in file_name_array]
-
-    #             self.directory=1
-    #             self.fileNames=file_name_array
-    #             fileName=file_name_array
-    #             self.selectFiles()
-    #       except IndexError:
-    #             print "no folder has been selected"
-    #       except OSError:
-    #             print "no folder has been selected"
 
     def openTiffFolder(self):
         '''
@@ -2210,17 +2090,16 @@ class Example(QtGui.QMainWindow):
         self.selectedFiles = [self.fileNames[f] for f in k if y[f] == True]
 
         ### From first data retrieve channel names, size of the image.
-        f = h5py.File(os.path.abspath(self.selectedFiles[0]), "r")
         try:
             self.dataTag = "images"
-            self.channels, self.y, self.x = f[self.ImageTag]["images"].shape
+            self.channels, self.y, self.x = self.f[0][self.ImageTag]["images"].shape
         except KeyError:
             try:
                 self.dataTag = "data"
-                self.channels, self.y, self.x = f[self.ImageTag]["data"].shape
+                self.channels, self.y, self.x = self.f[0][self.ImageTag]["data"].shape
             except KeyError:
                 self.dataTag = "XRF_roi"
-                self.channels1, self.y, self.x = f[self.ImageTag]["XRF_roi"].shape
+                self.channels1, self.y, self.x = self.f[0][self.ImageTag]["XRF_roi"].shape
                 self.channels = self.channels1 + len(self.channelnameTemp2)
         self.projections = len(self.selectedFiles)
         self.theta = zeros(self.projections)
@@ -2231,8 +2110,7 @@ class Example(QtGui.QMainWindow):
         #### check the size of the images
         x, y = 0, 0
         for i in arange(self.projections):
-            f = h5py.File(os.path.abspath(self.selectedFiles[i]), "r")
-            dummy, tempY, tempX = f[self.ImageTag][self.dataTag][...].shape
+            dummy, tempY, tempX = self.f[i][self.ImageTag][self.dataTag][...].shape
             if tempX > x: x = tempX
             if tempY > y: y = tempY
         self.x = x
@@ -2542,16 +2420,14 @@ class AlignWindow(QtGui.QWidget):
 
 class QSelect(QtGui.QWidget):
 
-    def __init__(self):
+    def __init__(self, labels):
         super(QSelect, self).__init__()
+        self.numlabels = labels
         self.initUI()
 
     def initUI(self):
         names = list()
-        # Ex = Example()
-        # numfiles = Ex.SendNumFiles()
-        # for i in arange(numfiles):
-        for i in arange(130):
+        for i in arange(self.numlabels):
             names.append("")
         self.grid = QtGui.QGridLayout()
         self.lbl = QtGui.QLabel()
@@ -2562,10 +2438,12 @@ class QSelect(QtGui.QWidget):
         self.btn2 = QtGui.QPushButton("set Image Tag", self)
         self.btn3 = QtGui.QPushButton("set Element", self)
 
+        columns = np.ceil(np.sqrt(self.numlabels))
+        rows = 10
         j = 0
         pos = list()
-        for y in arange(13):
-            for x in arange(10):
+        for y in arange(columns):
+            for x in arange(rows):
                 pos.append((x, y))
 
         self.button = list()
@@ -2578,8 +2456,8 @@ class QSelect(QtGui.QWidget):
         self.vb = QtGui.QVBoxLayout()
         self.vb2 = QtGui.QVBoxLayout()
 
-        self.vb.addWidget(self.lbl, 11)
-        self.vb.addWidget(self.lbl2, 12)
+        self.vb.addWidget(self.lbl, 12)
+        self.vb.addWidget(self.lbl2, 13)
 
         hb = QtGui.QHBoxLayout()
         hb.addWidget(self.btn2)
@@ -2587,12 +2465,11 @@ class QSelect(QtGui.QWidget):
         self.vb2.addLayout(hb)
         self.vb2.addWidget(self.btn)
 
-        self.grid.addLayout(self.vb, 11, 0, 1, 10)
-        self.grid.addLayout(self.vb2, 13, 3, 1, 2)
+        self.grid.addLayout(self.vb, 11, 0, 1, 7)
+        self.grid.addLayout(self.vb2, 13, 1, 1, 3)
 
         self.move(100, 100)
         self.setWindowTitle('Calculator')
-        self.show()
 
 ####==================
 class QSelect2(QtGui.QWidget):
@@ -2768,6 +2645,48 @@ class QSelect4(QtGui.QWidget):
         ##            vb.addWidget(self.lbl)
         self.setLayout(vb)
 
+
+class ConfigurationWindow(QtGui.QWidget):
+    def __init__(self):
+        super(ConfigurationWindow, self).__init__()
+        self.initUI()
+        
+    def initUI(self):
+        self.grid = QtGui.QGridLayout()
+        self.setLayout(self.grid)
+        self.lbl1 = QtGui.QLabel("Select beamline")
+        self.lbl2 = QtGui.QLabel("Enter theta position pv if other than default")
+        self.lbl3 = QtGui.QLabel("")
+        self.lbl4 = QtGui.QLabel("NOTE: PV for 2-IDE data processed before Feb 2018 is 657")
+        self.btn = QtGui.QPushButton("Okay")
+        self.txtfield = QtGui.QLineEdit("8")
+        self.txtfield2 = QtGui.QLineEdit("663")
+        self.button = QtGui.QCheckBox("Bionanoprobe")
+        self.button2 = QtGui.QCheckBox("2-IDE")
+        self.setWindowTitle('Configuration')
+        self.btn.setAutoRepeat(True)
+
+
+        vb = QtGui.QVBoxLayout()
+        vb.addWidget(self.lbl1,1)
+        vb.addWidget(self.button,2)
+        vb.addWidget(self.button2,3)
+        vb2 = QtGui.QVBoxLayout()
+        vb2.addWidget(self.lbl2,1)
+        vb2.addWidget(self.txtfield,2)
+        vb2.addWidget(self.txtfield2,3)
+        vb3 = QtGui.QVBoxLayout()
+        vb3.addWidget(self.lbl3)
+        vb3.addWidget(self.lbl4)
+        vb4 = QtGui.QVBoxLayout()
+        vb4.addWidget(self.btn)
+
+        self.grid.addLayout(vb,0,0,2,1)
+        self.grid.addLayout(vb2,0,1,2,2)
+        self.grid.addLayout(vb3,4,0,2,3)
+        self.grid.addLayout(vb4,6,1,1,1)
+
+        
 
 class imageProcess(QtGui.QWidget):
     def __init__(self):
