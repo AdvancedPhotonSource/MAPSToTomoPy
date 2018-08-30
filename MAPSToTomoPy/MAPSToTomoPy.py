@@ -2273,7 +2273,6 @@ class Example(QtGui.QMainWindow):
         self.sinogramData[isinf(self.sinogramData)] = 0.001
         self.sinoView.view.projView.setImage(self.sinogramData)
         self.sinoView.view.projView.setRect(QtCore.QRect(round(self.theta[0]), 0, round(self.theta[-1]) - round(self.theta[0]),self.sinogramData.shape[1]))
-        self.sinoView.view.projView.setRect(QtCore.QRect(0, 0, self.sinogramData.shape[0], self.sinogramData.shape[1]))
 
         self.sinoView.view.projData = self.sinogramData
         self.sinoView.view.getShape()
