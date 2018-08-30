@@ -23,10 +23,8 @@ import pyqtgraph as pg
 from pyqtgraph import QtGui, QtCore
 import h5py
 import tomopy
-import time
 import MyImageItem
-from copy import copy
-from pprint import pprint
+
 
 # import subpixelshift
 # from subpixelshift import *
@@ -40,12 +38,8 @@ class Example(QtGui.QMainWindow):
         self.fileNames = []
         self.theta = []
         self.f = []
-        ##            textEdit = QtGui.QTextEdit()
-        ##            self.setCentralWidget(textEdit)
-
+        self.thetaPos = 0
         self.ImageTag = "exchange"
-        self.thetaPos = 657
-        self.thetaPos = 8
 
         exitAction = QtGui.QAction('Exit', self)
         exitAction.triggered.connect(self.close)
@@ -57,9 +51,6 @@ class Example(QtGui.QMainWindow):
 
         openFileAction = QtGui.QAction('Open File', self)
         openFileAction.triggered.connect(self.openfile)
-
-        # openFolderAction = QtGui.QAction('Open Folder', self)
-        # openFolderAction.triggered.connect(self.openfolder)
 
         openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
         openTiffFolderAction.triggered.connect(self.openTiffFolder)
@@ -108,9 +99,6 @@ class Example(QtGui.QMainWindow):
 
         restoreAction = QtGui.QAction("Restore", self)
         restoreAction.triggered.connect(self.restore)
-
-        # readConfigAction = QtGui.QAction("Read configuration file", self)
-        # readConfigAction.triggered.connect(self.readConfigFile)
 
         runCenterOfMassAction = QtGui.QAction("run center of mass action", self)
         runCenterOfMassAction.triggered.connect(self.centerOfMassWindow)
@@ -164,17 +152,9 @@ class Example(QtGui.QMainWindow):
         self.vl.addWidget(self.tab_widget)
         self.vl.addWidget(self.createMessageWidget())
 
-        ##            self.win=pg.ImageView()
-        ##            self.layout1 = QtGui.QVBoxLayout()
-        ##            self.layout1.addWidget(self.win)
-        ##            self.vl.addWidget(self.layout1)
         self.frame.setLayout(self.vl)
         self.setCentralWidget(self.frame)
         self.tab_widget.setDisabled(True)
-
-        ##            self.lbl=QtGui.QLabel()
-        ##            self.setCentralWidget(self.lbl)
-        ##            self.lbl.setText("Starting")
 
         ## Top menu bar [file   Convert Option    Alignment   After saving in memory]
         menubar = self.menuBar()
@@ -218,22 +198,6 @@ class Example(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(reorderAction)
         self.afterConversionMenu.setDisabled(True)
 
-        # toolbar = self.addToolBar('ToolBar')
-        # toolbar.addAction(exitAction)
-        # toolbar.addAction(openFileAction)
-        # # toolbar.addAction(openFolderAction)
-        # toolbar.addAction(saveHotSpotPosAction)
-        # toolbar.addAction(alignHotSpotPosAction)
-        # toolbar.addAction(exportDataAction)
-        # toolbar.addAction(runTransRecAction)
-        # toolbar.addAction(runCenterOfMassAction)
-        # toolbar.addAction(matcherAction)
-        # toolbar.addAction(runReconstructAction)
-        # toolbar.addAction(selectElementAction)
-        # toolbar.addAction(convertAction)
-        # toolbar.addAction(saveSinogramAction)
-        # toolbar.setVisible(False)
-
         add = 0
         if platform == "win32":
             add = 50
@@ -274,16 +238,6 @@ class Example(QtGui.QMainWindow):
 
         os.chdir(original_path)
 
-    # def callW2(self):
-    #       '''
-    #       Call manual window
-    #       '''
-    #       self.manual=Manual()
-    #       self.manual.show()
-    #       if self.tab_widget.currentIndex()==1:
-    #             self.manual.setVisible(True)
-    #       if self.tab_widget.currentIndex()!=1:
-    #             self.manual.setVisible(False)
     #############################
     ## creating tab
 
@@ -1646,7 +1600,7 @@ class Example(QtGui.QMainWindow):
         if self.recon.cbox.isChecked():
             self.recCenter = None
         print "working fine"
-        b = time.time()
+
         if self.recon.method.currentIndex() == 0:
             self.rec = tomopy.recon(self.recData, self.theta * np.pi / 180, algorithm='mlem', center=self.recCenter,
                                     num_iter=num_iter)
@@ -1664,8 +1618,7 @@ class Example(QtGui.QMainWindow):
             self.rec = tomopy.recon(self.recData, self.theta * np.pi / 180, algorithm='pml_quad', center=self.recCenter,
                                     reg_par=np.array([beta, delta], dtype=np.float32), num_iter=num_iter)
 
-        a = time.time()
-        print a - b
+
 
         self.rec = tomopy.remove_nan(self.rec)
         self.reconProjNumb = self.projView.sld.value()
@@ -1800,27 +1753,7 @@ class Example(QtGui.QMainWindow):
 
     # ==============================
 
-    def convert(self):
-        '''
-        runs couple of functions to load data into memory
-        '''
-        self.afterConversionMenu.setDisabled(False)
-        self.convert2array()
-        # self.x=W2(self)
-        # self.x.textedit.setText("All the files has been converted")
-        # self.x.btn.setText("OK")
-        # self.x.btn.clicked.connect(self.selectFilesHide)
-        self.imgProcess.file_name_title.setText(self.selectedFiles[self.imgProcess.sld.value()])
-        self.projView.file_name_title.setText(self.selectedFiles[self.imgProcess.sld.value()])
-        self.reconView.file_name_title.setText(self.selectedFiles[self.imgProcess.sld.value()])
-        self.imgProcessControl.combo1.setCurrentIndex(1)
-        self.imgProcessControl.combo1.setCurrentIndex(0)
-        self.projViewControl.combo.setCurrentIndex(1)
-        self.projViewControl.combo.setCurrentIndex(0)
-        self.filecheck.setVisible(False)
-        # self.fcheck.setVisible(False)
 
-        # self.x.show()
 
     def selectElement(self):
         '''
@@ -1856,6 +1789,11 @@ class Example(QtGui.QMainWindow):
         self.element.btn.clicked.connect(self.setElement)
         self.element.btn2.clicked.connect(self.deselectAllElement)
         self.element.btn3.setVisible(False)
+        self.element.btn4.setVisible(False)
+
+        for i in range(self.channels):
+            for j in range(len(self.fileNames)):
+                self.f[i]["MAPS"]["XRF_roi"][j] = np.nan_to_num(self.f[i]["MAPS"]["XRF_roi"][j])
 
     def deselectAllElement(self):
         '''
@@ -1938,15 +1876,12 @@ class Example(QtGui.QMainWindow):
                 thetatmp = round(float(self.f[i]["MAPS"]["extra_pvs_as_csv"][self.thetaPos][tmp+1:]))
                 self.theta = np.append(self.theta,thetatmp)
 
-            sortedindx = np.argsort(self.theta)
-            self.fileNames = self.fileNames[sortedindx]
-            self.theta = self.theta[sortedindx]
             self.selectFiles()
-            print 'testpoint'
+
         except IndexError, AttributeError:
-            print "no file has been selected"
+            print "no file has been selected, IndexError"
         except IOError:
-            print "no file has been selected"
+            print "no file has been selected, IOError"
 
     def selectFiles(self):
         '''
@@ -1978,8 +1913,32 @@ class Example(QtGui.QMainWindow):
         self.filecheck.btn.clicked.connect(self.convert)
         self.filecheck.btn2.clicked.connect(self.selectImageTag)
         self.filecheck.btn3.clicked.connect(self.selectElementShow)
+        self.filecheck.btn4.clicked.connect(self.sortData)
         self.selectElement()
 
+    def sortData(self):
+        sortedindx = np.argsort(self.theta)
+        self.fileNames = self.fileNames[sortedindx]
+        self.theta = self.theta[sortedindx]
+        self.selectFiles()
+
+    def convert(self):
+        '''
+        runs couple of functions to load data into memory
+        '''
+        self.afterConversionMenu.setDisabled(False)
+        self.convert2array()
+        self.imgProcess.file_name_title.setText(self.selectedFiles[self.imgProcess.sld.value()])
+        self.projView.file_name_title.setText(self.selectedFiles[self.imgProcess.sld.value()])
+        self.reconView.file_name_title.setText(self.selectedFiles[self.imgProcess.sld.value()])
+        self.imgProcessControl.combo1.setCurrentIndex(1)
+        self.imgProcessControl.combo1.setCurrentIndex(0)
+        self.projViewControl.combo.setCurrentIndex(1)
+        self.projViewControl.combo.setCurrentIndex(0)
+        self.filecheck.setVisible(False)
+        # self.fcheck.setVisible(False)
+
+        # self.x.show()
     def openTiffFolder(self):
         '''
         opens the folder that contains tiff files and read file names.
@@ -2154,6 +2113,7 @@ class Example(QtGui.QMainWindow):
 
         self.data[isnan(self.data)] = 0.0001
         self.data[self.data == inf] = 0.0001
+        self.data = np.nan_to_num(self.data)
         self.p1 = [100, 100, self.data.shape[3] / 2]
 
         self.alignmentMenu.setEnabled(True)
@@ -2278,8 +2238,8 @@ class Example(QtGui.QMainWindow):
         self.sino.btn.clicked.connect(self.runCenterOfMass2)
         self.sino.btn.setText("center of mass")
         self.sino.btn2.clicked.connect(self.sinoShift)
-        self.sino.sld.setRange(5, self.y - 5)
-        self.sino.lcd.display(5)
+        self.sino.sld.setRange(1, self.y)
+        self.sino.lcd.display(1)
         self.sino.sld.valueChanged.connect(self.sino.lcd.display)
         self.sino.sld.valueChanged.connect(self.sinogram)
         self.sinoView.show()
@@ -2305,16 +2265,21 @@ class Example(QtGui.QMainWindow):
 
         for i in arange(self.projections):
             self.sinogramData[i * self.thickness:(i + 1) * self.thickness, :] = sinodata[i,
-                                                                                self.sino.sld.value() - self.thickness / 2:self.sino.sld.value() + self.thickness / 2,
-                                                                                :]
+                                                                                self.sino.sld.value() - 1, :]
+
         global sinofig
 
         sinofig = self.sinogramData
         self.sinogramData[isinf(self.sinogramData)] = 0.001
         self.sinoView.view.projView.setImage(self.sinogramData)
+        self.sinoView.view.projView.setRect(QtCore.QRect(round(self.theta[0]), 0, round(self.theta[-1]) - round(self.theta[0]),self.sinogramData.shape[1]))
         self.sinoView.view.projView.setRect(QtCore.QRect(0, 0, self.sinogramData.shape[0], self.sinogramData.shape[1]))
+
         self.sinoView.view.projData = self.sinogramData
         self.sinoView.view.getShape()
+
+
+
 
         # self.sinoView.getShape()
         # self.sinoView.setWindowTitle("Sinogram "+self.sino.combo.itemText(self.sinoelement)+" "+str(self.sino.sld.value()))
@@ -2434,9 +2399,10 @@ class QSelect(QtGui.QWidget):
         self.lbl2 = QtGui.QLabel()
         self.lbl.setText("closing this window won't affect your selection of the files")
         self.lbl2.setText("You should convert the files in order to generate sinogram or reconstructed data")
-        self.btn = QtGui.QPushButton('Save Data in Memory', self)
-        self.btn2 = QtGui.QPushButton("set Image Tag", self)
-        self.btn3 = QtGui.QPushButton("set Element", self)
+        self.btn = QtGui.QPushButton('Save Data in Memory')
+        self.btn2 = QtGui.QPushButton("set Image Tag")
+        self.btn3 = QtGui.QPushButton("set Element")
+        self.btn4 = QtGui.QPushButton("Sort data by angle")
 
         columns = np.ceil(np.sqrt(self.numlabels))
         rows = 10
@@ -2462,6 +2428,8 @@ class QSelect(QtGui.QWidget):
         hb = QtGui.QHBoxLayout()
         hb.addWidget(self.btn2)
         hb.addWidget(self.btn3)
+        hb.addWidget(self.btn4)
+
         self.vb2.addLayout(hb)
         self.vb2.addWidget(self.btn)
 
@@ -2492,8 +2460,7 @@ class QSelect2(QtGui.QWidget):
         hb.addWidget(self.btn4)
         self.btn3.setVisible(False)
         self.btn4.setVisible(False)
-        self.lbl = QtGui.QLabel()
-        self.lbl.setText("")
+        self.lbl = QtGui.QLabel("")
         vb = QtGui.QVBoxLayout()
         vb.addWidget(self.combo)
         vb.addWidget(self.btn)
@@ -2814,7 +2781,7 @@ class IView(pg.GraphicsLayoutWidget):
         self.p1 = self.addPlot()
 
         self.projView = MyImageItem.ImageItem()
-        self.projView.rotate(-90)
+        self.projView.rotate(0)
         self.p1.addItem(self.projView)
 
     def keyPressEvent(self, ev):
@@ -2935,7 +2902,6 @@ class IView2(pg.GraphicsLayoutWidget):
 class SinoWidget(pg.QtGui.QWidget):
     def __init__(self):
         super(SinoWidget, self).__init__()
-
         self.initUI()
 
     def initUI(self):
