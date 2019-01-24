@@ -1317,12 +1317,14 @@ class Example(QtGui.QMainWindow):
         self.imgProcessControl.setBackground.clicked.connect(self.setBg)
         self.imgProcessControl.deleteProjection.clicked.connect(self.removeFrame)
         self.imgProcessControl.testButton.clicked.connect(self.noise_analysis)
-        self.imgProcessControl.shift_left.clicked.connect(self.shiftDataLeft)
-        self.imgProcessControl.shift_left.clicked.connect(self.imgProcessProjChanged)
-        self.imgProcessControl.shift_right.clicked.connect(self.imgProcessProjChanged)
-        self.imgProcessControl.shift_right.clicked.connect(self.shiftDataRight)
-        self.imgProcessControl.shift_frame_up.clicked.connect(self.shiftProjectionUp)
-        self.imgProcessControl.shift_frame_down.clicked.connect(self.shiftProjectionDown)
+        self.imgProcessControl.shift_img_up.clicked.connect(self.shiftProjectionUp)
+        self.imgProcessControl.shift_img_down.clicked.connect(self.shiftProjectionDown)
+        self.imgProcessControl.shift_img_left.clicked.connect(self.shiftProjectionLeft)
+        self.imgProcessControl.shift_img_right.clicked.connect(self.shiftProjectionRight)
+        self.imgProcessControl.shift_all_up.clicked.connect(self.shiftDataUp)
+        self.imgProcessControl.shift_all_down.clicked.connect(self.shiftDataDown)
+        self.imgProcessControl.shift_all_left.clicked.connect(self.shiftDataLeft)
+        self.imgProcessControl.shift_all_right.clicked.connect(self.shiftDataRight)
 
         self.imgProcess.sld.setRange(0, self.projections - 1)
         self.imgProcess.sld.valueChanged.connect(self.imageProcessLCDValueChanged)
@@ -1335,22 +1337,42 @@ class Example(QtGui.QMainWindow):
         self.reconView.sld.setValue(0)
         self.reconView.lcd.display(0)
 
-    def shiftDataLeft(self):
-        self.data = np.roll(self.data,-5)
-        self.imgProcessProjChanged()
-
-    def shiftDataRight(self):
-        self.data = np.roll(self.data,5)
-        self.imgProcessProjChanged()
-
     def shiftProjectionUp(self):
-    	projection_index = self.imgProcess.sld.value() 
+        projection_index = self.imgProcess.sld.value()
         self.data[:,projection_index] = np.roll(self.data[:,projection_index],-1,axis=1)
         self.imgProcessProjChanged()
 
     def shiftProjectionDown(self):
-    	projection_index = self.imgProcess.sld.value() 
+        projection_index = self.imgProcess.sld.value() 
         self.data[:,projection_index] = np.roll(self.data[:,projection_index],1,axis=1)
+        self.imgProcessProjChanged()
+
+    def shiftProjectionLeft(self):
+        projection_index = self.imgProcess.sld.value() 
+        self.data[:,projection_index] = np.roll(self.data[:,projection_index],-1)
+        self.imgProcessProjChanged()
+
+    def shiftProjectionRight(self):
+        projection_index = self.imgProcess.sld.value() 
+        self.data[:,projection_index] = np.roll(self.data[:,projection_index],1)
+        self.imgProcessProjChanged()
+
+    def shiftDataUp(self):
+        for i in range(self.projections):
+            self.data[:,i] = np.roll(self.data[:,i],-1,axis=1)
+        self.imgProcessProjChanged()
+
+    def shiftDataDown(self):
+        for i in range(self.projections):
+            self.data[:,i] = np.roll(self.data[:,i],1,axis=1)
+        self.imgProcessProjChanged()
+
+    def shiftDataLeft(self):
+        self.data = np.roll(self.data,-4)
+        self.imgProcessProjChanged()
+
+    def shiftDataRight(self):
+        self.data = np.roll(self.data,4)
         self.imgProcessProjChanged()
 
     def imageProcessLCDValueChanged(self):
@@ -1365,7 +1387,6 @@ class Example(QtGui.QMainWindow):
         self.imgProcessImg = self.data[element, self.imgProcess.sld.value(), :, :]
         self.imgProcess.view.projView.setImage(self.imgProcessImg)
         self.file_name_update(self.imgProcess)
-
 
     def file_name_update(self, view):
         try:
@@ -2013,7 +2034,7 @@ class Example(QtGui.QMainWindow):
         for i in arange(len(self.fileNames)):
             onlyfilenameIndex = self.fileNames[i].rfind("/")
             files.append(self.fileNames[i][onlyfilenameIndex + 1:])
-            self.filecheck.button[i].setText(self.fileNames[i][onlyfilenameIndex + 1:] + " (" + str(self.theta[i]) + degree_sign + ")")
+            self.filecheck.button[i].setText(self.fileNames[i][onlyfilenameIndex + 1:].split("_")[-1] + " (" + str(self.theta[i]) + degree_sign + ")")
             self.filecheck.button[i].setChecked(True)
         self.files = np.array(files)
         self.ImageTag = self.f[1].items()[-1][0]
@@ -2224,7 +2245,11 @@ class Example(QtGui.QMainWindow):
                     else:
                         pos = self.channelnamePos[j] - len(list(self.channelnameTemp1))
                         imgY, imgX = f[self.ImageTag]["scalers"][0, :, :].shape
-                        self.data[j, i, dy:imgY + dy, dx:imgX + dx] = f[self.ImageTag]["scalers"][pos, :, :]
+                        dy = (y - imgY) / 2
+                        dx = (x - imgX) / 2
+                        temp_img = f[self.ImageTag]["scalers"][pos, :, :]
+                        temp_img[np.where(temp_img == 0)] = True
+                        self.data[j, i, dy:imgY + dy, dx:imgX + dx] = temp_img
                 print i + 1, "projection(s) has/have been converted"
             print "worked"
 
@@ -2498,8 +2523,8 @@ class QSelect(QtGui.QWidget):
     def initUI(self):
         names = list()
         list_sqrt = np.sqrt(self.numlabels)
-        columns = np.ceil(list_sqrt/2)
-        rows = np.ceil(list_sqrt*2)
+        columns = np.ceil(list_sqrt/1.5)
+        rows = np.ceil(list_sqrt*1.5)
 
         for i in arange(self.numlabels):
             names.append("")
@@ -2830,14 +2855,23 @@ class imageProcess(QtGui.QWidget):
         self.deleteProjection.setMaximumSize(100,25)
         self.testButton = QtGui.QPushButton("test btn")
         self.testButton.setMaximumSize(100,25)
-        self.shift_left = QtGui.QPushButton("shft all left")
-        self.testButton.setMaximumSize(100,25)
-        self.shift_right = QtGui.QPushButton("shft all right")
-        self.testButton.setMaximumSize(100,25)
-        self.shift_frame_up = QtGui.QPushButton("shift img up")
-        self.shift_frame_up.setMaximumSize(100,25)
-        self.shift_frame_down = QtGui.QPushButton("shift img down")
-        self.shift_frame_down.setMaximumSize(100,25)
+        self.shift_img_left = QtGui.QPushButton("shft img left")
+        self.shift_img_left.setMaximumSize(100,25)
+        self.shift_img_right = QtGui.QPushButton("shft img right")
+        self.shift_img_right.setMaximumSize(100,25)
+        self.shift_img_up = QtGui.QPushButton("shft img up")
+        self.shift_img_up.setMaximumSize(100,25)
+        self.shift_img_down = QtGui.QPushButton("shft img down")
+        self.shift_img_down.setMaximumSize(100,25)
+
+        self.shift_all_left = QtGui.QPushButton("shft all left")
+        self.shift_all_left.setMaximumSize(100,25)
+        self.shift_all_right = QtGui.QPushButton("shft all right")
+        self.shift_all_right.setMaximumSize(100,25)
+        self.shift_all_up = QtGui.QPushButton("shft all up")
+        self.shift_all_up.setMaximumSize(100,25)
+        self.shift_all_down = QtGui.QPushButton("shift all down")
+        self.shift_all_down.setMaximumSize(100,25)
 
         self.xSizeTxt = QtGui.QLineEdit(str(self.xSize))
         self.xSizeTxt.setMaximumSize(50,25)
@@ -2859,34 +2893,44 @@ class imageProcess(QtGui.QWidget):
         hb2.addWidget(self.ySizeTxt)
 
         hb3 = QtGui.QHBoxLayout()
-        hb3.addWidget(self.shift_frame_up)
+        hb3.addWidget(self.shift_img_up)
 
         hb4 = QtGui.QHBoxLayout()
-        hb4.addWidget(self.shift_left)
-        hb4.addWidget(self.shift_right)
+        hb4.addWidget(self.shift_img_left)
+        hb4.addWidget(self.shift_img_right)
 
         hb5 = QtGui.QHBoxLayout()
-        hb5.addWidget(self.shift_frame_down)
+        hb5.addWidget(self.shift_img_down)
 
         hb6 = QtGui.QHBoxLayout()
-        hb6.addWidget(self.bgBtn, )
-        hb6.addWidget(self.delHotspotBtn)
+        hb6.addWidget(self.shift_all_up)
 
         hb7 = QtGui.QHBoxLayout()
-        hb7.addWidget(self.normalizeBtn)
-        hb7.addWidget(self.cutBtn)
+        hb7.addWidget(self.shift_all_left)
+        hb7.addWidget(self.shift_all_right)
 
         hb8 = QtGui.QHBoxLayout()
-        hb8.addWidget(self.gaussian33Btn)
-        hb8.addWidget(self.gaussian55Btn)
+        hb8.addWidget(self.shift_all_down)
 
         hb9 = QtGui.QHBoxLayout()
-        hb9.addWidget(self.captureBackground)
-        hb9.addWidget(self.setBackground)
+        hb9.addWidget(self.bgBtn, )
+        hb9.addWidget(self.delHotspotBtn)
 
         hb10 = QtGui.QHBoxLayout()
-        hb10.addWidget(self.deleteProjection)
-        hb10.addWidget(self.testButton)
+        hb10.addWidget(self.normalizeBtn)
+        hb10.addWidget(self.cutBtn)
+
+        hb11 = QtGui.QHBoxLayout()
+        hb11.addWidget(self.gaussian33Btn)
+        hb11.addWidget(self.gaussian55Btn)
+
+        hb12 = QtGui.QHBoxLayout()
+        hb12.addWidget(self.captureBackground)
+        hb12.addWidget(self.setBackground)
+
+        hb13 = QtGui.QHBoxLayout()
+        hb13.addWidget(self.deleteProjection)
+        hb13.addWidget(self.testButton)
 
         vb1 = QtGui.QVBoxLayout()
         vb1.addLayout(hb1)
@@ -2901,6 +2945,9 @@ class imageProcess(QtGui.QWidget):
         vb2.addLayout(hb8)
         vb2.addLayout(hb9)
         vb2.addLayout(hb10)
+        vb2.addLayout(hb11)
+        vb2.addLayout(hb12)
+        vb2.addLayout(hb13)
 
         vb3 = QtGui.QVBoxLayout()
         vb3.addWidget(self.combo1)
@@ -2939,6 +2986,7 @@ class imageProcess(QtGui.QWidget):
         self.changeYSize()
         self.ySize -= 2
         self.ySizeTxt.setText(str(self.ySize))
+
 
 class IView(pg.GraphicsLayoutWidget):
 
@@ -3025,7 +3073,6 @@ class IView2(pg.GraphicsLayoutWidget):
                     print "This is the last projection"
 
         if ev.key() == QtCore.Qt.Key_S:
-
             self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = 0
             self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = 0
             if self.hotSpotNumb < self.data.shape[0] - 1:
@@ -3107,8 +3154,8 @@ class IView3(QtGui.QWidget):
             self.sld.setValue(self.sld.value + 1)
 
     def updatePanel(self):
-        self.lbl2.setText(str(np.round(self.view.projView.iniX,4)))
-        self.lbl4.setText(str(np.round(self.view.projView.iniY,4)))
+        self.lbl2.setText(str(np.round(self.view.data.projView.iniX,4)))
+        self.lbl4.setText(str(np.round(self.view.data.projView.iniY,4)))
 
 #########################
 def main():

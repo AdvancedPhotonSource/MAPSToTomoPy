@@ -497,6 +497,7 @@ class QSelect(QtGui.QWidget):
 		self.btn = QtGui.QPushButton('Save Data in Memory', self)
 		self.btn2 = QtGui.QPushButton("set Image Tag", self)
 		self.btn3 = QtGui.QPushButton("set Element", self)
+		self.btn4 = QtGui.QPushButton("Sort data by angle")
 
 		columns = np.ceil(np.sqrt(self.numlabels))
 		rows = 10
@@ -522,6 +523,8 @@ class QSelect(QtGui.QWidget):
 		hb = QtGui.QHBoxLayout()
 		hb.addWidget(self.btn2)
 		hb.addWidget(self.btn3)
+		hb.addWidget(self.btn4)
+
 		self.vb2.addLayout(hb)
 		self.vb2.addWidget(self.btn)
 
@@ -635,7 +638,7 @@ class QSelect3(QtGui.QWidget):
 		threshBox.addWidget(self.threshBtn)
 
 		for k in arange(len(self.methodname)):
-		    self.method.addItem(self.methodname[k])
+			self.method.addItem(self.methodname[k])
 		vb = QtGui.QVBoxLayout()
 		vb.addWidget(self.combo)
 		vb.addWidget(self.method)
@@ -669,7 +672,7 @@ class QSelect4(QtGui.QWidget):
 		self.lbl3 = QtGui.QLabel()
 		self.lbl3.setText("Set a group number of the hot spot")
 		for i in arange(5):
-		    self.combo2.addItem(str(i + 1))
+			self.combo2.addItem(str(i + 1))
 		self.btn = QtGui.QPushButton("Hotspots to a line")
 		self.btn2 = QtGui.QPushButton("Hotspots to a sine curve")
 		self.btn3 = QtGui.QPushButton("set y")
@@ -857,6 +860,7 @@ class SinoWidget(pg.QtGui.QWidget):
 		self.hist.setImageItem(self.view.projView)
 		hb1.addWidget(self.view)
 		hb1.addWidget(self.hist, 10)
+		self.hist.setMaximumWidth(110)
 		self.setLayout(hb1)
 
 	def keyPressEvent(self, ev):
@@ -1004,7 +1008,7 @@ class IView3(QtGui.QWidget):
         self.lcd = QtGui.QLCDNumber(self)
         self.hist = pg.HistogramLUTWidget()
         self.hist.setImageItem(self.view.projView)
-
+        self.hist.setMaximumWidth(110)
         hb2.addWidget(self.lcd)
         hb2.addWidget(self.sld)
         vb1.addWidget(self.file_name_title)
