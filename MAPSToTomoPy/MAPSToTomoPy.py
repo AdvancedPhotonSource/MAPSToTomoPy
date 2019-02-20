@@ -2262,7 +2262,6 @@ class Example(QtGui.QMainWindow):
 
         self.oldData = zeros(self.data.shape)
         self.oldData[...] = self.data[...]
-
         global datadata
         datadata = self.oldData
 
