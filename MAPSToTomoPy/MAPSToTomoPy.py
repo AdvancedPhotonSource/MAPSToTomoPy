@@ -113,7 +113,7 @@ class Example(QtGui.QMainWindow):
         matcherAction = QtGui.QAction("match template", self)
         matcherAction.triggered.connect(self.match_window)
 
-        selectBeamlineAction = QtGui.QAction("configuration", self)
+        selectBeamlineAction = QtGui.QAction("select beamline", self)
         selectBeamlineAction.triggered.connect(self.selectBeamline)
 
         exportDataAction = QtGui.QAction("export data", self)
