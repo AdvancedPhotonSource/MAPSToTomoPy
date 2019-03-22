@@ -1309,8 +1309,8 @@ class Example(QtGui.QMainWindow):
         self.imgProcessControl.bgBtn.clicked.connect(self.ipBg)
         self.imgProcessControl.delHotspotBtn.clicked.connect(self.ipDelHotspot)
         self.imgProcessControl.normalizeBtn.clicked.connect(self.ipNormalize)
-        self.imgProcessControl.cutBtn.clicked.connect(self.ipCut)
-        self.imgProcessControl.cutBtn.clicked.connect(self.updateReconBounds)
+        self.imgProcessControl.cropBtn.clicked.connect(self.ipCut)
+        self.imgProcessControl.cropBtn.clicked.connect(self.updateReconBounds)
         self.imgProcessControl.gaussian33Btn.clicked.connect(self.gauss33)
         self.imgProcessControl.gaussian33Btn.clicked.connect(self.gauss55)
         self.imgProcessControl.captureBackground.clicked.connect(self.copyBg)
@@ -1436,19 +1436,20 @@ class Example(QtGui.QMainWindow):
 
         self.meanNoise = np.mean(self.imgCopy)
         self.stdNoise = np.std(self.imgCopy)
+        self.get_noise_params()
 
-        return self.meanNoise, self.stdNoise
+        return self.imgCopy
 
     def noise_analysis(self):
 
-        meanNoise , stdNoise = self.copyBg()
-        image_copy = self.imgCopy
+        image_copy = self.copyBg()
         flattened = image_copy.reshape(np.size(image_copy))
-        noise_generator1 = np.random.normal(meanNoise, stdNoise+0.00001, np.size(flattened))
-        noise_generator = np.random.normal(meanNoise, stdNoise+0.00001, np.shape(image_copy))
+        noise_generator1 = np.random.normal(self.meanNoise, self.stdNoise, np.size(flattened))
+        noise_generator = np.random.normal(self.meanNoise, self.stdNoise, np.shape(image_copy))
+        noise_generator1[noise_generator1<0] = 0
 
         figure()
-        plt.plot(np.array(np.ones(np.size(flattened), dtype=int)*meanNoise))
+        plt.plot(np.array(np.ones(np.size(flattened), dtype=int)*self.meanNoise))
         plt.plot(flattened)
         plt.plot(noise_generator1)
         plt.legend(['Average Noise','Noise','Generated Noise'])
@@ -1457,7 +1458,13 @@ class Example(QtGui.QMainWindow):
         plt.imshow(noise_generator, cmap=gray(), interpolation='nearest')
         show()
 
-        print meanNoise, stdNoise
+        print self.meanNoise, self.stdNoise
+
+    def get_noise_params(self):
+        saved_mean = self.meanNoise
+        saved_std = self.stdNoise
+        return saved_mean, saved_std
+
 
     def setBg(self):
         element = self.imgProcessControl.combo1.currentIndex()
@@ -1470,7 +1477,12 @@ class Example(QtGui.QMainWindow):
         int(round(self.imgProcess.view.projView.iniY)) + ySize / 2,
         int(round(self.imgProcess.view.projView.iniX)) - xSize / 2:
         int(round(self.imgProcess.view.projView.iniX)) + xSize / 2] > 0
-        self.noise_generator = np.random.normal(self.meanNoise, self.stdNoise+0.00001, (ySize,xSize))*frame_boundary
+
+        meanNoise, stdNoise = self.get_noise_params()
+        print meanNoise, stdNoise
+
+        self.noise_generator = np.random.normal(meanNoise, stdNoise, (ySize,xSize))*frame_boundary
+        self.noise_generator[self.noise_generator<0] = 0
 
         self.data[element, projection,
         int(round(self.imgProcess.view.projView.iniY)) - ySize / 2:
@@ -1922,9 +1934,11 @@ class Example(QtGui.QMainWindow):
         self.element.btn3.setVisible(False)
         self.element.btn4.setVisible(False)
 
-        for i in range(self.channels):
-            for j in range(len(self.fileNames)):
-                self.f[i]["MAPS"]["XRF_roi"][j] = np.nan_to_num(self.f[i]["MAPS"]["XRF_roi"][j])
+
+        #MAC OS issue: lines below get executed withint try/except, but crash program regardless.
+        # for i in range(self.channels):
+        #     for j in range(len(self.fileNames)):
+        #         self.f[i]["MAPS"]["XRF_roi"][j] = np.nan_to_num(self.f[i]["MAPS"]["XRF_roi"][j])
 
     def deselectAllElement(self):
         '''
@@ -1996,8 +2010,9 @@ class Example(QtGui.QMainWindow):
         self.fileNames, self.theta, self.f = [],[],[]
         try:
             fileNametemp = QtGui.QFileDialog.getOpenFileNames(self, "Open File", QtCore.QDir.currentPath(), filter="h5 (*.h5)")
-            self.fileNames = str(fileNametemp.join("\n")).split("\n")
-            if self.fileNames == [""]: 
+            self.fileNames = [str(fileNametemp[0][i]) for i in range(len(fileNametemp[0]))]
+
+            if self.fileNames == [""]:
                 raise IndexError
             self.fileNames = np.array(self.fileNames)
 
@@ -2840,8 +2855,8 @@ class imageProcess(QtGui.QWidget):
         self.delHotspotBtn.setMaximumSize(100,25)
         self.normalizeBtn = QtGui.QPushButton("Normalize")
         self.normalizeBtn.setMaximumSize(100,25)
-        self.cutBtn = QtGui.QPushButton("Cut")
-        self.cutBtn.setMaximumSize(100,25)
+        self.cropBtn = QtGui.QPushButton("Cut")
+        self.cropBtn.setMaximumSize(100,25)
         self.gaussian33Btn = QtGui.QPushButton("3*3 gauss")
         self.gaussian33Btn.setMaximumSize(100,25)
         self.gaussian55Btn = QtGui.QPushButton("5*5 gauss")
@@ -2917,7 +2932,7 @@ class imageProcess(QtGui.QWidget):
 
         hb10 = QtGui.QHBoxLayout()
         hb10.addWidget(self.normalizeBtn)
-        hb10.addWidget(self.cutBtn)
+        hb10.addWidget(self.cropBtn)
 
         hb11 = QtGui.QHBoxLayout()
         hb11.addWidget(self.gaussian33Btn)
