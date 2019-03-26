@@ -1988,11 +1988,10 @@ class Example(QtGui.QMainWindow):
         self.conf = ConfigurationWindow()
         if type(message) == str:
             self.conf.lbl3.setText(message)
-        # self.conf.show()
+        self.conf.show()
 
-        # self.conf.btn.clicked.connect(self.beamline)
-        self.thetaPos = 663
-        self.openfile()
+        self.conf.btn.clicked.connect(self.beamline)
+        # self.thetaPos = 663
 
 
 
@@ -2016,6 +2015,7 @@ class Example(QtGui.QMainWindow):
         elif bnp == 1 and twoide == 1:
             self.conf.hide()
             self.selectBeamline("please select only one beamline")
+        # self.openfile()
 
     def openfile(self):
         '''
@@ -2023,9 +2023,9 @@ class Example(QtGui.QMainWindow):
         '''
         self.fileNames, self.theta, self.f = [],[],[]
         try:
-            # fileNametemp = QtGui.QFileDialog.getOpenFileNames(self, "Open File", QtCore.QDir.currentPath(), filter="h5 (*.h5)")
-            # self.fileNames = [str(fileNametemp[0][i]) for i in range(len(fileNametemp[0]))]
-            self.fileNames = ['/Users/fabricio/Downloads/ssz/2xfm_0031.h5', '/Users/fabricio/Downloads/ssz/2xfm_0032.h5', '/Users/fabricio/Downloads/ssz/2xfm_0033.h5', '/Users/fabricio/Downloads/ssz/2xfm_0034.h5', '/Users/fabricio/Downloads/ssz/2xfm_0035.h5']
+            fileNametemp = QtGui.QFileDialog.getOpenFileNames(self, "Open File", QtCore.QDir.currentPath(), filter="h5 (*.h5)")
+            self.fileNames = [str(fileNametemp[0][i]) for i in range(len(fileNametemp[0]))]
+            # self.fileNames = ['/Users/fabricio/Downloads/ssz/2xfm_0031.h5', '/Users/fabricio/Downloads/ssz/2xfm_0032.h5', '/Users/fabricio/Downloads/ssz/2xfm_0033.h5', '/Users/fabricio/Downloads/ssz/2xfm_0034.h5', '/Users/fabricio/Downloads/ssz/2xfm_0035.h5']
             if self.fileNames == [""]:
                 raise IndexError
             self.fileNames = np.array(self.fileNames)
